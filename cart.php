@@ -1,0 +1,184 @@
+<?php 
+session_start();
+include("functions/functions.php");
+
+?>
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>NTF's online store</title>
+		<link rel="icon" type="image" href="images/ntf.png"/>
+		<link rel="stylesheet" type="text/css" href="css/style.css"/>
+		
+		
+	</head>
+	<body>
+	
+	<!--Main container starts here -->
+		<div class="main_wrapper">
+		
+			<!--header starts here -->
+			<div class="main_header">
+				<a href="index.php"><img src="images/header.jpg" alt="header-image"/></a>
+			</div>
+			<!--header emds here -->
+		
+			<!--navigation bar starts here -->
+			<div class="menubar">
+				<ul id="menu">
+					<li><a href="index.php">Home</a></li>
+					<li><a href="all_products.php">All Products</a></li>
+					<li><a href="customer/my_account.php">My Account</a></li>
+					<!--<li><a href="">Sign up</a></li>-->
+					<li><a href="cart.php">Shopping Cart</a></li>
+					<li><a href="contact_us.php">Contact Us</a></li>
+				</ul>
+				
+				<div id="search_form">
+					<form action="results.php" method="get" enctype="multipart/form-data">
+						<input type="text" name="user_query" placeholder="Search product.." id="search" required/>
+						<input type="submit" name="search" value="Search" id="search_button"/>
+					</form>
+				</div>
+			</div>
+			<!--navigation bar ends here -->
+		
+			<!--contents wrapper starts here -->
+			<div class="content_wrapper">
+				<div id="sidebar">
+					<div id="sidebar_title">Categories</div>
+					<ul id="categories">
+						<?php getCats(); ?>
+					</ul>
+					
+					<div id="sidebar_title">Brands</div>
+					<ul id="categories">
+						<?php getBrands(); ?>
+					</ul>
+					
+					
+				</div>
+				<div id="content_area">
+					<?php cart(); ?>
+					<div id="shopping_cart">
+						<span> 
+						<?php
+						if(isset($_SESSION['customer_email'])){
+							echo "<b style='color:white;'>Welcome: </b><b style='color:skyblue;'>".$_SESSION['customer_email']."</b><b style='color:white;'> Your</b>";
+						}else{
+							echo "<b style='color:skyblue;'>Welcome Guest!</b>";
+						}
+						?>
+						<b style="color:white;margin-left:5px;">Shopping Cart-</b> <b style="color:orange;">Total Items:</b><?php total_items();?>  <b style="color:orange;">Total Price:</b><?php total_price();?> <a href="cart.php" style="color:skyblue;margin:0 5px;"> Go to cart</a>
+						<?php
+						if(!isset($_SESSION['customer_email'])){
+							echo "<a href='checkout.php' style='color:red;'>Login</a>";
+						}else{
+							echo "<a href='customer/logout.php' style='color:red;'>Logout</a>";
+						}
+						?>
+						</span>
+					</div>
+					<br/>
+					<div id="product_box">
+						<form action="" method="post" enctype="multipart/form-data" style="margin:auto;width:700px;">
+							<table width="700" >
+								<tr style="background:#5b0237;color:white;">
+									<th>Remove</th>
+									<th>Product image</th>
+									<th>Product(S)</th>
+									<th>Total Price</th>
+								</tr>
+								<?php	
+
+									$total = 0;
+									global $con;
+									
+									$ip = getIp();
+									$sel_price = "select * from cart where ip_add='$ip'";
+									$run_price = mysqli_query($con,$sel_price);
+									
+									while($p_price=mysqli_fetch_array($run_price)){
+										$pro_id = $p_price['p_id'];
+										$pro_price = "select * from products where product_id='$pro_id'";
+										$run_pro_price = mysqli_query($con,$pro_price);
+										while($pp_price=mysqli_fetch_array($run_pro_price)){
+											$product_price = array($pp_price['product_price']);
+											$product_title = $pp_price['product_title'];
+											$product_image = $pp_price['product_image'];
+											$single_price = $pp_price['product_price'];
+											
+											$values = array_sum($product_price);
+											$total +=$values;
+											
+										
+									
+								?>
+								<tr >
+									<td><input type="checkbox" name="remove[]" value="<?php echo $pro_id;?>"/></td>
+									
+									<td><img src="admin_area/<?php echo $product_image;?>" width="120" height="120"/></td>
+									<td><?php echo $product_title;?></td>
+									
+									<td><?php echo "$".number_format("$single_price",2);?></td>
+								</tr>
+								<?php
+																	
+									
+										}		
+
+									}
+								?>
+								<tr style="background:#5b0237;color:white;">
+									<td colspan="3" align="right"><b>Sub Total</b></td>
+									<td><?php echo "$".number_format("$total",2);?></td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<input type="submit" name="update_cart" value="Update Cart" id="search_button"/>
+									</td>
+									<td>
+										<input type="submit" name="continue" value="Continue Shopping" id="search_button"/>
+									</td>
+									<td colspan="2">
+										<a href="checkout.php" style="text-decoration:none;color:black;"><input type="button" value="Checkout" id="search_button"/></a>
+									</td>
+								</tr>
+							</table>
+						</form>
+						
+						
+					</div>
+				</div>
+				<div style="clear:both"></div>
+			</div>
+			<!--contents wrapper ends here -->
+		
+			<!--footer starts here -->
+			<div id="footer">&copy-2016, All rights goes to NTF's Ecommerce Site.</div>
+			<!--footer starts here -->
+		
+		</div>
+	<!--Main container ends here -->
+	
+	</body>
+</html>
+<?php 
+
+if (isset($_POST['update_cart'])) {
+
+	foreach($_POST['remove'] as $remove_id){
+		$delete_product = "delete from cart where p_id='$remove_id' AND ip_add='$ip'";
+		$run_delete = mysqli_query($con,$delete_product);
+		
+		if($run_delete){
+			echo "<script>window.open('cart.php','_self')</script>";
+		}
+	}
+}
+if(isset($_POST['continue'])){
+	echo "<script>window.open('index.php','_self')</script>";
+}
+
+?>
